@@ -1,0 +1,84 @@
+<div class="auth-container">
+  <div class="auth-card">
+    <h2>Create Account</h2>
+    <p class="subtitle">Join CineVault to organize your movies</p>
+
+    <div *ngIf="errorMessage" class="error-banner">
+      {{ errorMessage }}
+    </div>
+
+    <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input 
+          type="text" 
+          id="username" 
+          formControlName="username" 
+          placeholder="yourname"
+          class="form-control"
+          [disabled]="isSubmitting"
+        />
+        <div *ngIf="registerForm.get('username')?.touched && registerForm.get('username')?.invalid" class="error-msg">
+          <span *ngIf="registerForm.get('username')?.errors?.['required']">Username is required.</span>
+          <span *ngIf="registerForm.get('username')?.errors?.['minlength']">Username must be at least 3 characters.</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email Address</label>
+        <input 
+          type="email" 
+          id="email" 
+          formControlName="email" 
+          placeholder="you@example.com"
+          class="form-control"
+          [disabled]="isSubmitting"
+        />
+        <div *ngIf="registerForm.get('email')?.touched && registerForm.get('email')?.invalid" class="error-msg">
+          <span *ngIf="registerForm.get('email')?.errors?.['required']">Email is required.</span>
+          <span *ngIf="registerForm.get('email')?.errors?.['email']">Invalid email format.</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input 
+          type="password" 
+          id="password" 
+          formControlName="password" 
+          placeholder="••••••••"
+          class="form-control"
+          [disabled]="isSubmitting"
+        />
+        <div *ngIf="registerForm.get('password')?.touched && registerForm.get('password')?.invalid" class="error-msg">
+          <span *ngIf="registerForm.get('password')?.errors?.['required']">Password is required.</span>
+          <span *ngIf="registerForm.get('password')?.errors?.['minlength']">Password must be at least 6 characters.</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="confirmPassword">Confirm Password</label>
+        <input 
+          type="password" 
+          id="confirmPassword" 
+          formControlName="confirmPassword" 
+          placeholder="••••••••"
+          class="form-control"
+          [disabled]="isSubmitting"
+        />
+        <div *ngIf="registerForm.get('confirmPassword')?.touched && (registerForm.get('confirmPassword')?.invalid || registerForm.hasError('mismatch'))" class="error-msg">
+          <span *ngIf="registerForm.get('confirmPassword')?.errors?.['required']">Confirmation is required.</span>
+          <span *ngIf="registerForm.hasError('mismatch') && !registerForm.get('confirmPassword')?.errors?.['required']">Passwords do not match.</span>
+        </div>
+      </div>
+
+      <button type="submit" [disabled]="registerForm.invalid || isSubmitting" class="btn btn-primary btn-block">
+        {{ isSubmitting ? 'Registering...' : 'Register' }}
+      </button>
+    </form>
+
+    <p class="auth-footer">
+      Already have an account? <a routerLink="/login">Log in here</a>
+    </p>
+  </div>
+</div>

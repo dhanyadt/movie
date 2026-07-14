@@ -1,0 +1,14 @@
+{
+  "name": "cinevault",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start:server": "npm run dev --prefix server",
+    "start:client": "npm start --prefix client",
+    "start": "concurrently \"npm run start:server\" \"npm run start:client\"",
+    "install:all": "npm install && npm install --prefix server && npm install --prefix client"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

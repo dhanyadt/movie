@@ -1,0 +1,92 @@
+.app-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: #0b0f19;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 2rem;
+  background: rgba(17, 24, 39, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.nav-brand a {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #ffffff;
+  text-decoration: none;
+  background: linear-gradient(135deg, #6366f1, #a855f7);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.nav-links {
+  display: flex;
+  list-style: none;
+  gap: 2rem;
+  margin: 0;
+  padding: 0;
+  align-items: center;
+}
+
+.nav-links a {
+  color: #9ca3af;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+  padding: 0.5rem 0;
+}
+
+.nav-links a:hover {
+  color: #ffffff;
+}
+
+.nav-links a.active {
+  color: #6366f1;
+  border-bottom: 2px solid #6366f1;
+}
+
+.nav-links a.login-btn {
+  background: #6366f1;
+  color: #ffffff;
+  padding: 0.5rem 1.25rem;
+  border-radius: 8px;
+  border-bottom: none;
+}
+
+.nav-links a.login-btn:hover {
+  background: #4f46e5;
+  transform: translateY(-1px);
+}
+
+.nav-links a.login-btn.active {
+  border-bottom: none;
+  background: #4f46e5;
+}
+
+.main-content {
+  flex-grow: 1;
+}
+
+.footer {
+  text-align: center;
+  padding: 1.5rem;
+  background: rgba(17, 24, 39, 0.8);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  color: #6b7280;
+  font-size: 0.85rem;
+}

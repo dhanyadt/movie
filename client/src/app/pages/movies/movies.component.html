@@ -1,0 +1,41 @@
+<div class="movies-container">
+  <header class="movies-header">
+    <h2>Search Movies</h2>
+    <p>Find new films, explore titles, and add them to your CineVault library.</p>
+  </header>
+
+  <div class="search-bar-container">
+    <input 
+      type="text" 
+      [(ngModel)]="searchQuery" 
+      (input)="onSearch()" 
+      placeholder="Search by title or genre..." 
+      class="search-input"
+    />
+  </div>
+
+  <div class="movies-grid">
+    <div class="movie-card" *ngFor="let movie of filteredMovies">
+      <div class="movie-poster-placeholder">
+        <span class="poster-icon">🎬</span>
+      </div>
+      <div class="movie-info">
+        <h3>{{ movie.title }}</h3>
+        <p class="movie-meta">
+          <span>{{ movie.releaseYear }}</span> • <span>{{ movie.genre }}</span>
+        </p>
+        <div class="movie-rating-badge">
+          ★ {{ movie.rating }}
+        </div>
+        <div class="card-actions">
+          <a [routerLink]="['/movies', movie.id]" class="btn btn-secondary btn-sm">Details</a>
+          <button class="btn btn-primary btn-sm" disabled>+ Library</button>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="filteredMovies.length === 0" class="no-results">
+      <p>No movies found matching "{{ searchQuery }}".</p>
+    </div>
+  </div>
+</div>

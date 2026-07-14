@@ -1,0 +1,48 @@
+<div class="profile-container">
+  <div class="profile-card">
+    <div class="profile-header">
+      <div class="avatar-placeholder">MB</div>
+      <h2>User Profile</h2>
+      <p class="meta">Member since {{ user.joinedDate }}</p>
+    </div>
+
+    <form [formGroup]="profileForm" (ngSubmit)="onSubmit()">
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input 
+          type="text" 
+          id="username" 
+          formControlName="username" 
+          class="form-control"
+        />
+        <div *ngIf="profileForm.get('username')?.touched && profileForm.get('username')?.invalid" class="error-msg">
+          <span *ngIf="profileForm.get('username')?.errors?.['required']">Username is required.</span>
+          <span *ngIf="profileForm.get('username')?.errors?.['minlength']">Username must be at least 3 characters.</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email Address</label>
+        <input 
+          type="email" 
+          id="email" 
+          formControlName="email" 
+          class="form-control"
+        />
+        <div *ngIf="profileForm.get('email')?.touched && profileForm.get('email')?.invalid" class="error-msg">
+          <span *ngIf="profileForm.get('email')?.errors?.['required']">Email is required.</span>
+          <span *ngIf="profileForm.get('email')?.errors?.['email']">Invalid email format.</span>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button type="button" (click)="toggleEdit()" class="btn btn-secondary">
+          {{ isEditing ? 'Cancel' : 'Edit Profile' }}
+        </button>
+        <button type="submit" *ngIf="isEditing" [disabled]="profileForm.invalid" class="btn btn-primary">
+          Save Changes
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

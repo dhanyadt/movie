@@ -1,0 +1,50 @@
+<div class="details-container">
+  <div *ngIf="movie" class="movie-detail-card">
+    <div class="header-section">
+      <a routerLink="/movies" class="back-link">← Back to Movies</a>
+    </div>
+    
+    <div class="content-layout">
+      <div class="poster-section">
+        <div class="poster-placeholder">
+          <span>🎬</span>
+        </div>
+      </div>
+      
+      <div class="info-section">
+        <span class="genre-tag">{{ movie.genre }}</span>
+        <h2>{{ movie.title }}</h2>
+        
+        <div class="meta-row">
+          <span class="meta-item">📅 {{ movie.releaseYear }}</span>
+          <span class="meta-item">⏱️ {{ movie.runtime }}</span>
+          <span class="meta-item rating">★ {{ movie.rating }}/10</span>
+        </div>
+
+        <p class="plot-summary">
+          {{ movie.description }}
+        </p>
+
+        <div class="credits">
+          <div class="credit-item">
+            <strong>Director:</strong> <span>{{ movie.director }}</span>
+          </div>
+          <div class="credit-item">
+            <strong>Cast:</strong> <span>{{ movie.cast.join(', ') }}</span>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="btn btn-primary" disabled>Mark Favorite</button>
+          <button class="btn btn-secondary" disabled>Add Review</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="!movie" class="error-card">
+    <h3>Movie Not Found</h3>
+    <p>We couldn't find the movie details you were looking for.</p>
+    <a routerLink="/movies" class="btn btn-primary">Back to Movies</a>
+  </div>
+</div>

@@ -18,4 +18,11 @@ router.post('/login', authController.login);
 // @access  Private
 router.get('/me', protect, authController.getMe);
 
+router.put('/profile', protect, authController.updateProfile);
+
+// @desc    Update current logged in user password
+// @route   PUT /api/auth/password
+// @access  Private
+router.put('/password', protect, authController.updatePassword);
+
 module.exports = router;

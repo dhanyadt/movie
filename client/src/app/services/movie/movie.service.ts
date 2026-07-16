@@ -100,4 +100,24 @@ export class MovieService {
       headers: this.getHeaders()
     });
   }
+
+  getStats(): Observable<{
+    success: boolean;
+    stats: {
+      totalMovies: number;
+      watchingCount: number;
+      watchedCount: number;
+      planToWatchCount: number;
+    };
+  }> {
+    return this.http.get<{
+      success: boolean;
+      stats: {
+        totalMovies: number;
+        watchingCount: number;
+        watchedCount: number;
+        planToWatchCount: number;
+      };
+    }>(`${this.apiUrl}/stats`, { headers: this.getHeaders() });
+  }
 }

@@ -98,8 +98,81 @@ const loginUser = async (email, password) => {
   };
 };
 
+const updateUserProfile = async (userId, updateData) => {
+  const { name, email } = updateData;
+
+  if (!name || !email) {
+    const error = new Error('Please provide name and email');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  // Check if email is already taken by another user
+  const emailExists = await User.findOne({ email, _id: { $ne: userId } });
+  if (emailExists) {
+    const error = new Error('A user with this email address already exists');
+    error.statusCode = 409;
+    throw error;
+  }
+
+  // Find and update user
+  const user = await User.findByIdAndUpdate(
+    userId,
+    { name, email },
+    { new: true, runValidators: true }
+  ).select('-password');
+
+  if (!user) {
+    const error = new Error('User not found');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  return {
+    id: user._id,
+    name: user.name,
+    email: user.email,
+    avatar: user.avatar,
+    favoriteGenres: user.favoriteGenres,
+  };
+};
+
+const updateUserPassword = async (userId, currentPassword, newPassword) => {
+  if (!currentPassword || !newPassword) {
+    const error = new Error('Please provide both current and new passwords');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const user = await User.findById(userId);
+  if (!user) {
+    const error = new Error('User not found');
+    error.statusCode = 404;
+    throw error;
+  }
+
+  // Verify current password
+  const isMatch = await user.matchPassword(currentPassword);
+  if (!isMatch) {
+    const error = new Error('Current password is incorrect');
+    error.statusCode = 401;
+    throw error;
+  }
+
+  // Set new password (will be hashed automatically by pre('save') hook)
+  user.password = newPassword;
+  await user.save();
+
+  return {
+    success: true,
+    message: 'Password updated successfully',
+  };
+};
+
 module.exports = {
   registerUser,
   loginUser,
+  updateUserProfile,
   generateToken,
+  updateUserPassword,
 };

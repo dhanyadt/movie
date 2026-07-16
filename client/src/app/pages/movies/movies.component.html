@@ -1,41 +1,182 @@
-<div class="movies-container">
-  <header class="movies-header">
-    <h2>Search Movies</h2>
-    <p>Find new films, explore titles, and add them to your CineVault library.</p>
+<div class="discover-container">
+  <!-- Search Header -->
+  <header class="discover-header animate-fade">
+    <h2>Discover Movies</h2>
+    <div class="search-bar">
+      <span class="search-icon">🔍</span>
+      <input 
+        type="text" 
+        [(ngModel)]="searchQuery" 
+        (ngModelChange)="onSearchChange()" 
+        placeholder="Search for movies by title..." 
+        class="search-input"
+      />
+    </div>
   </header>
 
-  <div class="search-bar-container">
-    <input 
-      type="text" 
-      [(ngModel)]="searchQuery" 
-      (input)="onSearch()" 
-      placeholder="Search by title or genre..." 
-      class="search-input"
-    />
+  <!-- Error Alert -->
+  <div *ngIf="errorMessage" class="error-banner animate-fade">
+    <p>⚠️ {{ errorMessage }}</p>
   </div>
 
-  <div class="movies-grid">
-    <div class="movie-card" *ngFor="let movie of filteredMovies">
-      <div class="movie-poster-placeholder">
-        <span class="poster-icon">🎬</span>
+  <!-- Search Results Section (Visible when searching) -->
+  <div *ngIf="searchQuery && searchQuery.trim().length > 0" class="search-results-section animate-fade">
+    <h3 class="section-title">Search Results for "{{ searchQuery }}"</h3>
+    
+    <!-- Search Loader -->
+    <div *ngIf="isLoadingSearch" class="grid-layout">
+      <div class="skeleton-card" *ngFor="let s of skeletons">
+        <div class="skeleton-poster"></div>
+        <div class="skeleton-text line1"></div>
+        <div class="skeleton-text line2"></div>
       </div>
-      <div class="movie-info">
-        <h3>{{ movie.title }}</h3>
-        <p class="movie-meta">
-          <span>{{ movie.releaseYear }}</span> • <span>{{ movie.genre }}</span>
-        </p>
-        <div class="movie-rating-badge">
-          ★ {{ movie.rating }}
+    </div>
+
+    <!-- Results Grid -->
+    <div *ngIf="!isLoadingSearch && searchResults && searchResults.length > 0" class="grid-layout">
+      <div class="movie-card" *ngFor="let movie of searchResults" [routerLink]="['/discover', movie.id]">
+        <div class="poster-container">
+          <img 
+            [src]="getPosterUrl(movie.poster_path)" 
+            [alt]="movie.title" 
+            loading="lazy"
+            (error)="handleImageError($event)"
+          />
         </div>
-        <div class="card-actions">
-          <a [routerLink]="['/movies', movie.id]" class="btn btn-secondary btn-sm">Details</a>
-          <button class="btn btn-primary btn-sm" disabled>+ Library</button>
+        <div class="card-info">
+          <h4>{{ movie.title }}</h4>
+          <div class="info-footer">
+            <span class="year-lbl">{{ getReleaseYear(movie.release_date) }}</span>
+            <span class="rating-lbl">★ {{ movie.vote_average ? (movie.vote_average | number:'1.1-1') : '0.0' }}</span>
+          </div>
         </div>
       </div>
     </div>
 
-    <div *ngIf="filteredMovies.length === 0" class="no-results">
-      <p>No movies found matching "{{ searchQuery }}".</p>
+    <!-- Empty State -->
+    <div *ngIf="!isLoadingSearch && searchResults && searchResults.length === 0" class="empty-state">
+      <span class="empty-icon">🎬</span>
+      <p>No results found for "{{ searchQuery }}". Try another title!</p>
     </div>
+  </div>
+
+  <!-- Default Movie Lists (Visible when not searching) -->
+  <div *ngIf="!searchQuery || searchQuery.trim().length === 0" class="default-browse-sections">
+    
+    <!-- Section: Trending -->
+    <section class="movie-row-section animate-fade">
+      <h3 class="section-title">🔥 Weekly Trending</h3>
+   
+      <div class="row-scroll-container">
+        <!-- Loaders -->
+        <ng-container *ngIf="isLoadingTrending">
+          <div class="skeleton-card" *ngFor="let s of skeletons">
+            <div class="skeleton-poster"></div>
+            <div class="skeleton-text line1"></div>
+            <div class="skeleton-text line2"></div>
+          </div>
+        </ng-container>
+        <!-- Cards -->
+        <ng-container *ngIf="!isLoadingTrending">
+          <div class="movie-card" *ngFor="let movie of trendingMovies" [routerLink]="['/discover', movie.id]">
+            <div class="poster-container">
+              <img [src]="getPosterUrl(movie.poster_path)" [alt]="movie.title" loading="lazy" (error)="handleImageError($event)" />
+            </div>
+            <div class="card-info">
+              <h4>{{ movie.title }}</h4>
+              <div class="info-footer">
+                <span class="year-lbl">{{ getReleaseYear(movie.release_date) }}</span>
+                <span class="rating-lbl">★ {{ movie.vote_average ? (movie.vote_average | number:'1.1-1') : '0.0' }}</span>
+              </div>
+            </div>
+          </div>
+        </ng-container>
+      </div>
+    </section>
+
+    <!-- Section: Popular -->
+    <section class="movie-row-section animate-fade">
+      <h3 class="section-title">🍿 Popular Movies</h3>
+      <div class="row-scroll-container">
+        <ng-container *ngIf="isLoadingPopular">
+          <div class="skeleton-card" *ngFor="let s of skeletons">
+            <div class="skeleton-poster"></div>
+            <div class="skeleton-text line1"></div>
+            <div class="skeleton-text line2"></div>
+          </div>
+        </ng-container>
+        <ng-container *ngIf="!isLoadingPopular">
+          <div class="movie-card" *ngFor="let movie of popularMovies" [routerLink]="['/discover', movie.id]">
+            <div class="poster-container">
+              <img [src]="getPosterUrl(movie.poster_path)" [alt]="movie.title" loading="lazy" (error)="handleImageError($event)" />
+            </div>
+            <div class="card-info">
+              <h4>{{ movie.title }}</h4>
+              <div class="info-footer">
+                <span class="year-lbl">{{ getReleaseYear(movie.release_date) }}</span>
+                <span class="rating-lbl">★ {{ movie.vote_average ? (movie.vote_average | number:'1.1-1') : '0.0' }}</span>
+              </div>
+            </div>
+          </div>
+        </ng-container>
+      </div>
+    </section>
+
+    <!-- Section: Top Rated -->
+    <section class="movie-row-section animate-fade">
+      <h3 class="section-title">⭐ Top Rated</h3>
+      <div class="row-scroll-container">
+        <ng-container *ngIf="isLoadingTopRated">
+          <div class="skeleton-card" *ngFor="let s of skeletons">
+            <div class="skeleton-poster"></div>
+            <div class="skeleton-text line1"></div>
+            <div class="skeleton-text line2"></div>
+          </div>
+        </ng-container>
+        <ng-container *ngIf="!isLoadingTopRated">
+          <div class="movie-card" *ngFor="let movie of topRatedMovies" [routerLink]="['/discover', movie.id]">
+            <div class="poster-container">
+              <img [src]="getPosterUrl(movie.poster_path)" [alt]="movie.title" loading="lazy" (error)="handleImageError($event)" />
+            </div>
+            <div class="card-info">
+              <h4>{{ movie.title }}</h4>
+              <div class="info-footer">
+                <span class="year-lbl">{{ getReleaseYear(movie.release_date) }}</span>
+                <span class="rating-lbl">★ {{ movie.vote_average ? (movie.vote_average | number:'1.1-1') : '0.0' }}</span>
+              </div>
+            </div>
+          </div>
+        </ng-container>
+      </div>
+    </section>
+
+    <!-- Section: Upcoming -->
+    <section class="movie-row-section animate-fade">
+      <h3 class="section-title">🎬 Upcoming Releases</h3>
+      <div class="row-scroll-container">
+        <ng-container *ngIf="isLoadingUpcoming">
+          <div class="skeleton-card" *ngFor="let s of skeletons">
+            <div class="skeleton-poster"></div>
+            <div class="skeleton-text line1"></div>
+            <div class="skeleton-text line2"></div>
+          </div>
+        </ng-container>
+        <ng-container *ngIf="!isLoadingUpcoming">
+          <div class="movie-card" *ngFor="let movie of upcomingMovies" [routerLink]="['/discover', movie.id]">
+            <div class="poster-container">
+              <img [src]="getPosterUrl(movie.poster_path)" [alt]="movie.title" loading="lazy" (error)="handleImageError($event)" />
+            </div>
+            <div class="card-info">
+              <h4>{{ movie.title }}</h4>
+              <div class="info-footer">
+                <span class="year-lbl">{{ getReleaseYear(movie.release_date) }}</span>
+                <span class="rating-lbl">★ {{ movie.vote_average ? (movie.vote_average | number:'1.1-1') : '0.0' }}</span>
+              </div>
+            </div>
+          </div>
+        </ng-container>
+      </div>
+    </section>
+
   </div>
 </div>

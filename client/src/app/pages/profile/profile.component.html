@@ -1,48 +1,170 @@
-<div class="profile-container">
-  <div class="profile-card">
-    <div class="profile-header">
-      <div class="avatar-placeholder">MB</div>
-      <h2>User Profile</h2>
-      <p class="meta">Member since {{ user.joinedDate }}</p>
-    </div>
-
-    <form [formGroup]="profileForm" (ngSubmit)="onSubmit()">
-      <div class="form-group">
-        <label for="username">Username</label>
-        <input 
-          type="text" 
-          id="username" 
-          formControlName="username" 
-          class="form-control"
-        />
-        <div *ngIf="profileForm.get('username')?.touched && profileForm.get('username')?.invalid" class="error-msg">
-          <span *ngIf="profileForm.get('username')?.errors?.['required']">Username is required.</span>
-          <span *ngIf="profileForm.get('username')?.errors?.['minlength']">Username must be at least 3 characters.</span>
+<div class="profile-page-container">
+  
+  <div class="profile-layout">
+    
+    <!-- Account Card Left Side (Glassmorphism card) -->
+    <aside class="account-card">
+      <div class="avatar-container">
+        <div class="avatar-glow"></div>
+        <div class="avatar-circle">
+          <span>{{ getInitials() }}</span>
         </div>
       </div>
+      <h3 class="account-name">{{ authService.currentUser()?.name }}</h3>
+      <p class="account-email">{{ authService.currentUser()?.email }}</p>
+      <div class="account-meta">
+        <span class="meta-label">Member Since</span>
+        <span class="meta-val">{{ getMemberSinceYear() }}</span>
+      </div>
+    </aside>
 
-      <div class="form-group">
-        <label for="email">Email Address</label>
-        <input 
-          type="email" 
-          id="email" 
-          formControlName="email" 
-          class="form-control"
-        />
-        <div *ngIf="profileForm.get('email')?.touched && profileForm.get('email')?.invalid" class="error-msg">
-          <span *ngIf="profileForm.get('email')?.errors?.['required']">Email is required.</span>
-          <span *ngIf="profileForm.get('email')?.errors?.['email']">Invalid email format.</span>
+    <!-- Settings Forms Right Side -->
+    <main class="settings-content">
+      
+      <!-- Section: Account Information -->
+      <section class="settings-section glass-panel">
+        <h3>👤 Account Information</h3>
+        <p class="section-desc">Update your profile username and email address.</p>
+        
+        <div *ngIf="profileSuccess" class="alert alert-success">
+          {{ profileSuccess }}
         </div>
-      </div>
+        <div *ngIf="profileError" class="alert alert-error">
+          {{ profileError }}
+        </div>
 
-      <div class="actions">
-        <button type="button" (click)="toggleEdit()" class="btn btn-secondary">
-          {{ isEditing ? 'Cancel' : 'Edit Profile' }}
-        </button>
-        <button type="submit" *ngIf="isEditing" [disabled]="profileForm.invalid" class="btn btn-primary">
-          Save Changes
-        </button>
-      </div>
-    </form>
+        <form [formGroup]="profileForm" (ngSubmit)="onSaveProfile()">
+          <div class="form-group">
+            <label for="name">Username</label>
+            <input 
+              type="text" 
+              id="name" 
+              formControlName="name" 
+              class="form-control" 
+              placeholder="e.g. MovieBuff"
+            />
+            <div *ngIf="profileForm.get('name')?.touched && profileForm.get('name')?.invalid" class="validation-error">
+              Username must be at least 3 characters.
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="email">Email Address</label>
+            <input 
+              type="email" 
+              id="email" 
+              formControlName="email" 
+              class="form-control" 
+              placeholder="e.g. user@example.com"
+            />
+            <div *ngIf="profileForm.get('email')?.touched && profileForm.get('email')?.invalid" class="validation-error">
+              Please enter a valid email address.
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary" [disabled]="profileForm.invalid || isUpdatingProfile">
+              {{ isUpdatingProfile ? 'Saving...' : 'Save Changes' }}
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Section: Security -->
+      <section class="settings-section glass-panel">
+        <h3>🔒 Security</h3>
+        <p class="section-desc">Change your password to keep your account secure.</p>
+
+        <div *ngIf="passwordSuccess" class="alert alert-success">
+          {{ passwordSuccess }}
+        </div>
+        <div *ngIf="passwordError" class="alert alert-error">
+          {{ passwordError }}
+        </div>
+
+        <form [formGroup]="passwordForm" (ngSubmit)="onUpdatePassword()">
+          <!-- Current Password -->
+          <div class="form-group">
+            <label for="currentPassword">Current Password</label>
+            <div class="password-input-wrapper">
+              <input 
+                [type]="showCurrentPassword ? 'text' : 'password'" 
+                id="currentPassword" 
+                formControlName="currentPassword" 
+                class="form-control password-input" 
+                placeholder="Enter current password"
+              />
+              <button 
+                type="button" 
+                class="password-toggle-btn"
+                (click)="showCurrentPassword = !showCurrentPassword"
+              >
+                {{ showCurrentPassword ? '👁️' : '🔒' }}
+              </button>
+            </div>
+            <div *ngIf="passwordForm.get('currentPassword')?.touched && passwordForm.get('currentPassword')?.invalid" class="validation-error">
+              Password must be at least 6 characters.
+            </div>
+          </div>
+
+          <!-- New Password -->
+          <div class="form-group">
+            <label for="newPassword">New Password</label>
+            <div class="password-input-wrapper">
+              <input 
+                [type]="showNewPassword ? 'text' : 'password'" 
+                id="newPassword" 
+                formControlName="newPassword" 
+                class="form-control password-input" 
+                placeholder="Minimum 6 characters"
+              />
+              <button 
+                type="button" 
+                class="password-toggle-btn"
+                (click)="showNewPassword = !showNewPassword"
+              >
+                {{ showNewPassword ? '👁️' : '🔒' }}
+              </button>
+            </div>
+            <div *ngIf="passwordForm.get('newPassword')?.touched && passwordForm.get('newPassword')?.invalid" class="validation-error">
+              Password must be at least 6 characters.
+            </div>
+          </div>
+
+          <!-- Confirm New Password -->
+          <div class="form-group">
+            <label for="confirmNewPassword">Confirm New Password</label>
+            <div class="password-input-wrapper">
+              <input 
+                [type]="showConfirmNewPassword ? 'text' : 'password'" 
+                id="confirmNewPassword" 
+                formControlName="confirmNewPassword" 
+                class="form-control password-input" 
+                placeholder="Re-type new password"
+              />
+              <button 
+                type="button" 
+                class="password-toggle-btn"
+                (click)="showConfirmNewPassword = !showConfirmNewPassword"
+              >
+                {{ showConfirmNewPassword ? '👁️' : '🔒' }}
+              </button>
+            </div>
+            <div *ngIf="passwordForm.get('confirmNewPassword')?.touched && passwordForm.get('confirmNewPassword')?.errors?.['passwordMismatch']" class="validation-error">
+              Passwords do not match.
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary" [disabled]="passwordForm.invalid || isUpdatingPassword">
+              {{ isUpdatingPassword ? 'Updating...' : 'Update Password' }}
+            </button>
+          </div>
+        </form>
+      </section>
+
+    </main>
+
   </div>
+
 </div>

@@ -127,10 +127,30 @@ const deleteUserMovie = async (userId, tmdbId) => {
   return userMovie;
 };
 
+/**
+ * Get movie library statistics for a user
+ */
+const getLibraryStats = async (userId) => {
+  const [totalMovies, watchingCount, watchedCount, planToWatchCount] = await Promise.all([
+    UserMovie.countDocuments({ userId }),
+    UserMovie.countDocuments({ userId, status: 'Watching' }),
+    UserMovie.countDocuments({ userId, status: 'Watched' }),
+    UserMovie.countDocuments({ userId, status: 'Plan to Watch' }),
+  ]);
+
+  return {
+    totalMovies,
+    watchingCount,
+    watchedCount,
+    planToWatchCount,
+  };
+};
+
 module.exports = {
   addMovieToLibrary,
   getUserLibrary,
   getUserMovie,
   updateUserMovie,
   deleteUserMovie,
+  getLibraryStats,
 };

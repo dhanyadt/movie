@@ -10,6 +10,9 @@ router.route('/')
   .post(movieController.saveMovie)
   .get(movieController.getMovies);
 
+router.route('/stats')
+  .get(movieController.getMovieStats);
+
 router.route('/:tmdbId')
   .get(movieController.getMovie)
   .put(movieController.updateMovie)

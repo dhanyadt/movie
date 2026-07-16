@@ -1,0 +1,202 @@
+<div class="vault-container">
+  <header class="vault-header animate-fade">
+    <h2>🍿 My CineVault</h2>
+    <p>Your curated collection of watched, watching, and plan-to-watch films.</p>
+  </header>
+
+  <!-- Statistics Grid with premium styled cards & icons -->
+  <section class="stats-grid animate-fade">
+    <div class="stat-card total-card">
+      <div class="stat-icon">🎬</div>
+      <div class="stat-content">
+        <span class="stat-num">{{ stats.totalMovies }}</span>
+        <span class="stat-lbl">Movies</span>
+      </div>
+    </div>
+    <div class="stat-card watching-card">
+      <div class="stat-icon">🍿</div>
+      <div class="stat-content">
+        <span class="stat-num">{{ stats.watchingCount }}</span>
+        <span class="stat-lbl">Dropped</span>
+      </div>
+    </div>
+    <div class="stat-card watched-card">
+      <div class="stat-icon">✅</div>
+      <div class="stat-content">
+        <span class="stat-num">{{ stats.watchedCount }}</span>
+        <span class="stat-lbl">Watched</span>
+      </div>
+    </div>
+    <div class="stat-card plan-card">
+      <div class="stat-icon">⏳</div>
+      <div class="stat-content">
+        <span class="stat-num">{{ stats.planToWatchCount }}</span>
+        <span class="stat-lbl">Plan to Watch</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Loader -->
+  <div *ngIf="isLoading" class="loader-container">
+    <div class="spinner"></div>
+    <p>Loading your movie library...</p>
+  </div>
+
+  <!-- Content (When not loading) -->
+  <div *ngIf="!isLoading" class="vault-content">
+    
+    <!-- Shelf 1: Recently Added (Carousel Layout) -->
+    <section class="carousel-section animate-fade" *ngIf="recentAdditions.length > 0">
+      <h3 class="section-title">✨ Recently Added</h3>
+      <div class="carousel-container">
+        <div class="carousel-card" *ngFor="let movie of recentAdditions" [routerLink]="['/discover', movie.id]" [ngClass]="{
+          'card-watched': movie.status === 'Watched',
+          'card-plan': movie.status === 'Plan to Watch',
+          'card-watching': movie.status === 'Watching'
+        }">
+          <img 
+            [src]="getPosterUrl(movie.poster_path)" 
+            [alt]="movie.title" 
+            class="carousel-img"
+            (error)="handleImageError($event)"
+          />
+          <div class="carousel-overlay">
+            <span class="carousel-title">{{ movie.title }}</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Shelf 2: Library Grid, Filtering & Search Controls -->
+    <section class="library-section animate-fade">
+      <div class="library-controls-header">
+        <h3 class="section-title">Your library</h3>
+        
+        <!-- Search & Sorting controls -->
+        <div class="controls-wrapper">
+          <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input 
+              type="text" 
+              [(ngModel)]="searchQuery" 
+              (ngModelChange)="applyFiltersAndSort()"
+              placeholder="Search your Vault..." 
+              class="search-input"
+            />
+          </div>
+
+          <div class="sort-box">
+            <select [(ngModel)]="activeSort" (ngModelChange)="applyFiltersAndSort()" class="sort-select">
+              <option value="Recently Added">Recently Added</option>
+              <option value="Title">Title</option>
+              <option value="Rating">Rating</option>
+              <option value="Release Year">Release Year</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filter Chips -->
+      <div class="filter-chips">
+        <button 
+          class="chip-btn" 
+          [class.active]="activeFilter === 'All'" 
+          (click)="activeFilter = 'All'; applyFiltersAndSort()"
+        >
+          All
+        </button>
+        <button 
+          class="chip-btn watched-chip" 
+          [class.active]="activeFilter === 'Watched'" 
+          (click)="activeFilter = 'Watched'; applyFiltersAndSort()"
+        >
+          ✓ Watched
+        </button>
+        <button 
+          class="chip-btn plan-chip" 
+          [class.active]="activeFilter === 'Plan to Watch'" 
+          (click)="activeFilter = 'Plan to Watch'; applyFiltersAndSort()"
+        >
+          ⏰ Plan to watch
+        </button>
+        <button 
+          class="chip-btn watching-chip" 
+          [class.active]="activeFilter === 'Watching'" 
+          (click)="activeFilter = 'Watching'; applyFiltersAndSort()"
+        >
+          ✕ Dropped
+        </button>
+        <button 
+          class="chip-btn favorites-chip" 
+          [class.active]="activeFilter === 'Favorites'" 
+          (click)="activeFilter = 'Favorites'; applyFiltersAndSort()"
+        >
+          ❤️ Favorites
+        </button>
+      </div>
+
+      <!-- Empty State -->
+      <div *ngIf="filteredMovies.length === 0" class="empty-state">
+        <div class="empty-icon">📂</div>
+        <p class="empty-text">No movies found here.</p>
+        <p class="sub-text">Start discovering new films and add them to your collection!</p>
+        <a routerLink="/discover" class="btn btn-primary">Discover Movies</a>
+      </div>
+
+      <!-- Movie Card Grid -->
+      <div class="movie-grid" *ngIf="filteredMovies.length > 0">
+        <div class="movie-card" *ngFor="let movie of filteredMovies" [routerLink]="['/discover', movie.id]" [ngClass]="{
+          'card-watched': movie.status === 'Watched',
+          'card-plan': movie.status === 'Plan to Watch',
+          'card-watching': movie.status === 'Watching'
+        }">
+          <div class="poster-container">
+            <img 
+              [src]="getPosterUrl(movie.poster_path)" 
+              [alt]="movie.title" 
+              class="poster-img"
+              (error)="handleImageError($event)"
+              loading="lazy"
+            />
+            
+            <!-- Badges -->
+            <div class="badge-row">
+              <span class="card-badge" [ngClass]="{
+                'badge-watching': movie.status === 'Watching',
+                'badge-watched': movie.status === 'Watched',
+                'badge-plan': movie.status === 'Plan to Watch'
+              }">
+                {{ movie.status === 'Watched' ? '✓' : (movie.status === 'Plan to Watch' ? '⏰' : '✕') }}
+              </span>
+              
+              <!-- Red Heart favorite tag indicator -->
+              <span class="favorite-indicator" *ngIf="movie.favorite">❤️</span>
+            </div>
+
+            <!-- Hover overlay -->
+            <div class="card-overlay">
+              <button 
+                type="button" 
+                class="remove-btn" 
+                (click)="removeMovie(movie.id, movie.title, $event)" 
+                title="Remove from Vault"
+              >
+                🗑️ Remove
+              </button>
+              <span class="card-details-btn">Details →</span>
+            </div>
+          </div>
+          <div class="movie-info">
+            <h4>{{ movie.title }}</h4>
+            <div class="info-footer">
+              <span class="year-lbl" *ngIf="movie.release_date">{{ getReleaseYear(movie.release_date) }}</span>
+              <span class="rating-lbl" *ngIf="movie.rating || movie.tmdbRating">★ {{ (movie.rating || movie.tmdbRating) | number:'1.1-1' }}</span>
+              <span class="rating-lbl unrated" *ngIf="!movie.rating && !movie.tmdbRating">Unrated</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>

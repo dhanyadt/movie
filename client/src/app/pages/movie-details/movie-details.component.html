@@ -1,50 +1,169 @@
-<div class="details-container">
-  <div *ngIf="movie" class="movie-detail-card">
-    <div class="header-section">
-      <a routerLink="/movies" class="back-link">← Back to Movies</a>
-    </div>
-    
-    <div class="content-layout">
-      <div class="poster-section">
-        <div class="poster-placeholder">
-          <span>🎬</span>
-        </div>
+<div class="details-page-container" *ngIf="movie">
+  
+  <!-- Movie Header Backdrop (cinematic visual representation) -->
+  <div class="backdrop-wrapper">
+    <div class="backdrop-overlay"></div>
+    <img 
+      *ngIf="movie.backdrop_path" 
+      [src]="getBackdropUrl(movie.backdrop_path)" 
+      [alt]="movie.title" 
+      class="backdrop-img"
+    />
+  </div>
+
+  <div class="details-content-wrapper">
+    <!-- Left Column: Poster -->
+    <div class="poster-column">
+      <div class="poster-glass">
+        <img 
+          [src]="getPosterUrl(movie.poster_path)" 
+          [alt]="movie.title" 
+          class="poster-img"
+          (error)="handleImageError($event)"
+        />
       </div>
-      
-      <div class="info-section">
-        <span class="genre-tag">{{ movie.genre }}</span>
-        <h2>{{ movie.title }}</h2>
+    </div>
+
+    <!-- Right Column: Info & Description -->
+    <div class="info-column">
+      <div class="info-header">
         
+        <!-- Title and Circular Rating Progress Row -->
+        <div class="title-rating-row">
+          <h2 class="movie-title">{{ movie.title }}</h2>
+          
+          <!-- Circular Neon Green Progress Ring -->
+          <div class="rating-circle-container">
+            <svg class="rating-circle" viewBox="0 0 36 36">
+              <path class="circle-bg"
+                d="M18 2.0845
+                  a 15.9155 15.9155 0 0 1 0 31.831
+                  a 15.9155 15.9155 0 0 1 0 -31.831"
+              />
+              <path class="circle"
+                [attr.stroke-dasharray]="((movie.vote_average || 0) * 10) + ', 100'"
+                d="M18 2.0845
+                  a 15.9155 15.9155 0 0 1 0 31.831
+                  a 15.9155 15.9155 0 0 1 0 -31.831"
+              />
+            </svg>
+            <div class="rating-value">{{ movie.vote_average | number:'1.1-1' }}</div>
+          </div>
+        </div>
+
+        <p class="tagline-text" *ngIf="movie.tagline">"{{ movie.tagline }}"</p>
+
+        <!-- Metadata row -->
         <div class="meta-row">
-          <span class="meta-item">📅 {{ movie.releaseYear }}</span>
-          <span class="meta-item">⏱️ {{ movie.runtime }}</span>
-          <span class="meta-item rating">★ {{ movie.rating }}/10</span>
+          <span class="meta-item">📅 {{ movie.release_date | date:'mediumDate' }}</span>
+          <span class="meta-item">⏱️ {{ movie.runtime }} mins</span>
+          <span class="meta-item rating">★ {{ movie.vote_average | number:'1.1-1' }}/10</span>
         </div>
 
-        <p class="plot-summary">
-          {{ movie.description }}
-        </p>
+        <!-- Overview -->
+        <h3 class="subsection-title">Overview</h3>
+        <p class="plot-summary">{{ movie.overview }}</p>
 
-        <div class="credits">
-          <div class="credit-item">
-            <strong>Director:</strong> <span>{{ movie.director }}</span>
-          </div>
-          <div class="credit-item">
-            <strong>Cast:</strong> <span>{{ movie.cast.join(', ') }}</span>
-          </div>
-        </div>
+        <!-- Status / Vault controls -->
+        <div class="vault-status-area">
+          <ng-container *ngIf="authService.isLoggedIn(); else loginPrompt">
+            
+            <div *ngIf="inVault" class="vault-badge-banner glass-panel">
+              <div class="badge-header-info">
+                <span class="badge-icon" [ngClass]="{
+                  'badge-icon-watched': vaultMovieStatus === 'Watched',
+                  'badge-icon-plan': vaultMovieStatus === 'Plan to Watch',
+                  'badge-icon-watching': vaultMovieStatus === 'Watching'
+                }">
+                  {{ vaultMovieStatus === 'Watched' ? '✓' : (vaultMovieStatus === 'Plan to Watch' ? '⏰' : '✕') }}
+                </span>
+                <span class="badge-text">Already in My Vault (Status: <strong>{{ vaultMovieStatus === 'Watching' ? 'Dropped' : vaultMovieStatus }}</strong>) <span *ngIf="vaultMovieFavorite" class="favorite-indicator">❤️</span></span>
+              </div>
+              <div class="vault-banner-actions">
+                <button (click)="openVaultModal()" class="btn btn-secondary btn-sm">⚙️ Edit Status</button>
+                <button (click)="removeFromVault()" class="btn btn-danger btn-sm">🗑️ Remove</button>
+              </div>
+            </div>
 
-        <div class="actions">
-          <button class="btn btn-primary" disabled>Mark Favorite</button>
-          <button class="btn btn-secondary" disabled>Add Review</button>
+            <button 
+              *ngIf="!inVault" 
+              (click)="openVaultModal()" 
+              class="btn btn-primary btn-vault-cta"
+            >
+              + Add to My Vault
+            </button>
+
+          </ng-container>
+          
+          <ng-template #loginPrompt>
+            <div class="login-prompt-banner glass-panel">
+              <p>Login to add this movie to your Vault</p>
+              <a routerLink="/login" class="btn btn-primary btn-sm">Login</a>
+            </div>
+          </ng-template>
         </div>
       </div>
     </div>
   </div>
 
-  <div *ngIf="!movie" class="error-card">
-    <h3>Movie Not Found</h3>
-    <p>We couldn't find the movie details you were looking for.</p>
-    <a routerLink="/movies" class="btn btn-primary">Back to Movies</a>
+  <!-- Save/Edit to Vault Modal -->
+  <div *ngIf="showModal" class="modal-backdrop">
+    <div class="modal-card glass-panel">
+      <div class="modal-header">
+        <h4>{{ inVault ? 'Edit Library Status' : 'Save to Library' }}</h4>
+        <button (click)="closeVaultModal()" class="close-btn" [disabled]="isSaving">&times;</button>
+      </div>
+
+      <div *ngIf="modalErrorMessage" class="modal-error">
+        {{ modalErrorMessage }}
+      </div>
+
+      <form [formGroup]="vaultForm" (ngSubmit)="saveToVault()">
+        <div class="form-group">
+          <label class="status-label">Watch Status</label>
+          <div class="status-custom-selector">
+            <button 
+              type="button"
+              class="status-option-btn watched-btn"
+              [class.active]="vaultForm.get('status')?.value === 'Watched'"
+              (click)="vaultForm.patchValue({ status: 'Watched' })"
+            >
+              ✓ Watched
+            </button>
+            <button 
+              type="button"
+              class="status-option-btn plan-btn"
+              [class.active]="vaultForm.get('status')?.value === 'Plan to Watch'"
+              (click)="vaultForm.patchValue({ status: 'Plan to Watch' })"
+            >
+              ⏰ Plan to watch
+            </button>
+            <button 
+              type="button"
+              class="status-option-btn watching-btn"
+              [class.active]="vaultForm.get('status')?.value === 'Watching'"
+              (click)="vaultForm.patchValue({ status: 'Watching' })"
+            >
+              ✕ Dropped
+            </button>
+          </div>
+        </div>
+
+        <div class="form-group checkbox-group">
+          <input type="checkbox" id="favorite" formControlName="favorite" class="checkbox-input" />
+          <label for="favorite" class="checkbox-label">Mark as Favorite</label>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" (click)="closeVaultModal()" class="btn btn-secondary" [disabled]="isSaving">
+            Cancel
+          </button>
+          <button type="submit" class="btn btn-primary" [disabled]="vaultForm.invalid || isSaving">
+            {{ isSaving ? 'Saving...' : 'Save to Vault' }}
+          </button>
+        </div>
+      </form>
+    </div>
   </div>
+
 </div>

@@ -5,10 +5,14 @@
     </div>
     <ul class="nav-links">
       <li><a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">Home</a></li>
-      <li><a routerLink="/movies" routerLinkActive="active">Movies</a></li>
-      <li><a routerLink="/dashboard" routerLinkActive="active">Dashboard</a></li>
-      <li><a routerLink="/profile" routerLinkActive="active">Profile</a></li>
-      <li><a routerLink="/login" routerLinkActive="active" class="login-btn">Login</a></li>
+      @if (authService.isLoggedIn()) {
+        <li><a routerLink="/discover" routerLinkActive="active">Discover</a></li>
+        <li><a routerLink="/vault" routerLinkActive="active">My Vault</a></li>
+        <li><a routerLink="/profile" routerLinkActive="active">Profile</a></li>
+        <li><button (click)="logout()" class="logout-btn">Logout</button></li>
+      } @else {
+        <li><a routerLink="/login" routerLinkActive="active" class="login-btn">Login</a></li>
+      }
     </ul>
   </nav>
 
@@ -17,6 +21,18 @@
   </main>
 
   <footer class="footer">
-    <p>&copy; 2026 CineVault. All rights reserved. Powered by Gemini AI.</p>
+    <p>&copy; 2026 CineVault • Track • Discover • Organize. Powered by TMDb.</p>
   </footer>
+
+  <!-- Reusable Toast Notification System -->
+  <div class="toast-container">
+    @for (toast of toastService.toasts(); track toast.id) {
+      <div class="toast-alert" [class]="toast.type" (click)="toastService.removeToast(toast.id)">
+        <span class="toast-icon">
+          {{ toast.type === 'success' ? '✓' : '⚠️' }}
+        </span>
+        <span class="toast-msg">{{ toast.message }}</span>
+      </div>
+    }
+  </div>
 </div>

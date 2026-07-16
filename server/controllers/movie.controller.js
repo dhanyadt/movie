@@ -86,10 +86,26 @@ const deleteMovie = async (req, res, next) => {
   }
 };
 
+/**
+ * Get library statistics
+ */
+const getMovieStats = async (req, res, next) => {
+  try {
+    const stats = await movieService.getLibraryStats(req.user.id);
+    res.status(200).json({
+      success: true,
+      stats,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   saveMovie,
   getMovies,
   getMovie,
   updateMovie,
   deleteMovie,
+  getMovieStats,
 };

@@ -1,8 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink, Router } from '@angular/router';
 import { AuthService } from '../../services/auth/auth.service';
+import { ToastService } from '../../services/toast/toast.service';
 
 @Component({
   selector: 'app-login',
@@ -12,6 +13,7 @@ import { AuthService } from '../../services/auth/auth.service';
   styleUrl: './login.component.css'
 })
 export class LoginComponent {
+  private readonly toastService = inject(ToastService);
   loginForm: FormGroup;
   errorMessage: string | null = null;
   isSubmitting = false;
@@ -37,14 +39,17 @@ export class LoginComponent {
         next: (response) => {
           this.isSubmitting = false;
           if (response.success) {
-            this.router.navigate(['/dashboard']);
+            this.toastService.showSuccess(`Welcome back, ${response.user?.name || 'User'}!`);
+            this.router.navigate(['/discover']);
           } else {
             this.errorMessage = response.message || 'Login failed';
+            this.toastService.showError(this.errorMessage || 'Login failed');
           }
         },
         error: (err) => {
           this.isSubmitting = false;
           this.errorMessage = err.message || 'An error occurred during login. Please try again.';
+          this.toastService.showError(this.errorMessage || 'Login failed');
         }
       });
     }

@@ -1,5 +1,6 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, signal, computed, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Router } from '@angular/router';
 import { Observable, tap, catchError, throwError, of } from 'rxjs';
 
 export interface User {
@@ -22,6 +23,7 @@ export interface AuthResponse {
 })
 export class AuthService {
   private readonly apiUrl = 'http://localhost:5000/api/auth';
+  private readonly router = inject(Router);
   
   // Reactive signals for modern state management
   readonly currentUser = signal<User | null>(null);
@@ -74,6 +76,7 @@ export class AuthService {
   logout(): void {
     localStorage.removeItem('token');
     this.currentUser.set(null);
+    this.router.navigate(['/login']);
   }
 
   getMe(): Observable<AuthResponse> {
@@ -92,6 +95,33 @@ export class AuthService {
           this.currentUser.set(response.user);
         }
       }),
+      catchError(this.handleError)
+    );
+  }
+
+  updateProfile(name: string, email: string): Observable<AuthResponse> {
+    const token = localStorage.getItem('token');
+    const headers = new HttpHeaders({
+      'Authorization': token ? `Bearer ${token}` : ''
+    });
+
+    return this.http.put<AuthResponse>(`${this.apiUrl}/profile`, { name, email }, { headers }).pipe(
+      tap((response) => {
+        if (response.success && response.user) {
+          this.currentUser.set(response.user);
+        }
+      }),
+      catchError(this.handleError)
+    );
+  }
+
+  updatePassword(currentPassword: string, newPassword: string): Observable<{ success: boolean; message: string } > {
+    const token = localStorage.getItem('token');
+    const headers = new HttpHeaders({
+      'Authorization': token ? `Bearer ${token}` : ''
+    });
+
+    return this.http.put<{ success: boolean; message: string }>(`${this.apiUrl}/password`, { currentPassword, newPassword }, { headers }).pipe(
       catchError(this.handleError)
     );
   }

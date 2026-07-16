@@ -3,6 +3,7 @@ const cors = require('cors');
 const morgan = require('morgan');
 const authRoutes = require('./routes/auth');
 const movieRoutes = require('./routes/movie.routes');
+const tmdbRoutes = require('./routes/tmdb.routes');
 const errorHandler = require('./middleware/error');
 
 const app = express();
@@ -29,6 +30,7 @@ app.get('/api/health', (req, res) => {
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/movies', movieRoutes);
+app.use('/api/tmdb', tmdbRoutes);
 
 // Catch 404 (optional)
 app.use((req, res, next) => {

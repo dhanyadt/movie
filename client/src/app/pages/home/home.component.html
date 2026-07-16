@@ -1,22 +1,26 @@
 <div class="home-container">
   <header class="hero">
     <h1>CineVault</h1>
-    <p>Your AI-Powered Personal Movie Companion</p>
+    <p class="tagline">Discover. Organize. Remember every movie.</p>
     <div class="cta-buttons">
-      <a routerLink="/login" class="btn btn-primary">Login</a>
-      <a routerLink="/register" class="btn btn-secondary">Register</a>
+      @if (authService.isLoggedIn()) {
+        <a routerLink="/discover" class="btn btn-primary">Discover Movies</a>
+      } @else {
+        <a routerLink="/login" class="btn btn-primary">Login</a>
+        <a routerLink="/register" class="btn btn-secondary">Register</a>
+      }
     </div>
   </header>
   <section class="features">
-    <div class="feature-card">
+    <div class="feature-card glass-panel">
       <h3>Track Progress</h3>
-      <p>Organize movies into Watching, Watched, or Plan to Watch lists.</p>
+      <p>Organize movies into Watched, Dropped, or Plan to Watch lists.</p>
     </div>
-    <div class="feature-card">
-      <h3>AI Recommendations</h3>
-      <p>Get personalized recommendations and summaries powered by Gemini AI.</p>
+    <div class="feature-card glass-panel">
+      <h3>Curated Library</h3>
+      <p>Manage your personal watchlists and organize your movies with a custom library.</p>
     </div>
-    <div class="feature-card">
+    <div class="feature-card glass-panel">
       <h3>Organize & Review</h3>
       <p>Rate your movies, write detailed reviews, and create custom collections.</p>
     </div>

@@ -1,8 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink, Router } from '@angular/router';
 import { AuthService } from '../../services/auth/auth.service';
+import { ToastService } from '../../services/toast/toast.service';
 
 @Component({
   selector: 'app-register',
@@ -12,6 +13,7 @@ import { AuthService } from '../../services/auth/auth.service';
   styleUrl: './register.component.css'
 })
 export class RegisterComponent {
+  private readonly toastService = inject(ToastService);
   registerForm: FormGroup;
   errorMessage: string | null = null;
   isSubmitting = false;
@@ -46,14 +48,17 @@ export class RegisterComponent {
         next: (response) => {
           this.isSubmitting = false;
           if (response.success) {
+            this.toastService.showSuccess('Registration successful! Please log in.');
             this.router.navigate(['/login']);
           } else {
             this.errorMessage = response.message || 'Registration failed';
+            this.toastService.showError(this.errorMessage || 'Registration failed');
           }
         },
         error: (err) => {
           this.isSubmitting = false;
           this.errorMessage = err.message || 'An error occurred during registration. Please try again.';
+          this.toastService.showError(this.errorMessage || 'Registration failed');
         }
       });
     }

@@ -1,76 +1,200 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-
-interface MovieDetail {
-  id: number;
-  title: string;
-  releaseYear: number;
-  rating: number;
-  genre: string;
-  description: string;
-  runtime: string;
-  director: string;
-  cast: string[];
-}
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { TMDbService, TMDbMovieDetail } from '../../services/tmdb/tmdb.service';
+import { MovieService, UserMovie } from '../../services/movie/movie.service';
+import { AuthService } from '../../services/auth/auth.service';
+import { ToastService } from '../../services/toast/toast.service';
 
 @Component({
   selector: 'app-movie-details',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, ReactiveFormsModule],
   templateUrl: './movie-details.component.html',
   styleUrl: './movie-details.component.css'
 })
 export class MovieDetailsComponent implements OnInit {
+  protected readonly authService = inject(AuthService);
+  protected readonly toastService = inject(ToastService);
   movieId!: number;
-  movie: MovieDetail | null = null;
+  movie: TMDbMovieDetail | null = null;
+  
+  // Library State
+  inVault = false;
+  vaultMovieStatus: string | null = null;
+  vaultMovieFavorite = false;
 
-  // Mock database
-  moviesDb: MovieDetail[] = [
-    {
-      id: 1,
-      title: 'Inception',
-      releaseYear: 2010,
-      rating: 8.8,
-      genre: 'Sci-Fi / Thriller',
-      description: 'A thief who steals corporate secrets through the use of dream-sharing technology is given the inverse task of planting an idea into the mind of a C.E.O., but his tragic past may doom the project.',
-      runtime: '2h 28m',
-      director: 'Christopher Nolan',
-      cast: ['Leonardo DiCaprio', 'Joseph Gordon-Levitt', 'Elliot Page', 'Tom Hardy']
-    },
-    {
-      id: 2,
-      title: 'Interstellar',
-      releaseYear: 2014,
-      rating: 8.6,
-      genre: 'Sci-Fi / Adventure / Drama',
-      description: 'When Earth becomes uninhabitable, a team of explorers travels through a wormhole in space in an attempt to ensure humanity\'s survival.',
-      runtime: '2h 49m',
-      director: 'Christopher Nolan',
-      cast: ['Matthew McConaughey', 'Anne Hathaway', 'Jessica Chastain', 'Mackenzie Foy']
-    },
-    {
-      id: 3,
-      title: 'The Dark Knight',
-      releaseYear: 2008,
-      rating: 9.0,
-      genre: 'Action / Crime / Drama',
-      description: 'When the menace known as the Joker wreaks havoc and chaos on the people of Gotham, Batman must accept one of the greatest psychological and physical tests of his ability to fight injustice.',
-      runtime: '2h 32m',
-      director: 'Christopher Nolan',
-      cast: ['Christian Bale', 'Heath Ledger', 'Aaron Eckhart', 'Maggie Gyllenhaal']
-    }
-  ];
+  // UI States
+  isLoading = true;
+  isSaving = false;
+  showModal = false;
+  errorMessage: string | null = null;
+  modalErrorMessage: string | null = null;
 
-  constructor(private route: ActivatedRoute) {}
+  // Vault Form
+  vaultForm: FormGroup;
+
+  constructor(
+    private route: ActivatedRoute,
+    private fb: FormBuilder,
+    private tmdbService: TMDbService,
+    private movieService: MovieService
+  ) {
+    this.vaultForm = this.fb.group({
+      status: ['Plan to Watch', Validators.required],
+      favorite: [false],
+      collection: ['']
+    });
+  }
 
   ngOnInit(): void {
     this.route.paramMap.subscribe(params => {
       const idStr = params.get('id');
       if (idStr) {
         this.movieId = parseInt(idStr, 10);
-        this.movie = this.moviesDb.find(m => m.id === this.movieId) || null;
+        this.loadMovieDetails();
       }
     });
+  }
+
+  private loadMovieDetails(): void {
+    this.isLoading = true;
+    this.errorMessage = null;
+
+    this.tmdbService.getMovieDetails(this.movieId).subscribe({
+      next: (res) => {
+        this.movie = res.data;
+        if (this.authService.isLoggedIn()) {
+          this.checkLibraryStatus();
+        } else {
+          this.isLoading = false;
+        }
+      },
+      error: (err) => {
+        this.isLoading = false;
+        this.errorMessage = err.message || 'Failed to fetch movie details from TMDb.';
+      }
+    });
+  }
+
+  private checkLibraryStatus(): void {
+    this.movieService.getMovie(this.movieId).subscribe({
+      next: (res) => {
+        this.isLoading = false;
+        if (res.success && res.data) {
+          this.inVault = true;
+          this.vaultMovieStatus = res.data.status;
+          this.vaultMovieFavorite = res.data.favorite || false;
+        } else {
+          this.inVault = false;
+          this.vaultMovieFavorite = false;
+        }
+      },
+      error: () => {
+        this.inVault = false;
+        this.vaultMovieFavorite = false;
+        this.isLoading = false;
+      }
+    });
+  }
+
+  openVaultModal(): void {
+    this.modalErrorMessage = null;
+    this.showModal = true;
+
+    if (this.inVault) {
+      this.movieService.getMovie(this.movieId).subscribe({
+        next: (res) => {
+          if (res.success && res.data) {
+            this.vaultForm.patchValue({
+              status: res.data.status,
+              favorite: res.data.favorite || false
+            });
+          }
+        }
+      });
+    }
+  }
+
+  closeVaultModal(): void {
+    this.showModal = false;
+    this.vaultForm.reset({
+      status: 'Plan to Watch',
+      favorite: false,
+      collection: ''
+    });
+  }
+
+  saveToVault(): void {
+    if (this.vaultForm.valid && this.movie) {
+      this.isSaving = true;
+      this.modalErrorMessage = null;
+      const { status, favorite, collection } = this.vaultForm.value;
+
+      const apiCall = this.inVault 
+        ? this.movieService.updateMovie(this.movie.id, { status, favorite, collection })
+        : this.movieService.saveMovie(this.movie.id, status, favorite, collection);
+
+      apiCall.subscribe({
+        next: (res) => {
+          this.isSaving = false;
+          if (res.success && res.data) {
+            this.toastService.showSuccess(this.inVault ? 'Library status updated.' : 'Movie added to My Vault.');
+            this.inVault = true;
+            this.vaultMovieStatus = res.data.status;
+            this.vaultMovieFavorite = res.data.favorite || false;
+            this.closeVaultModal();
+          } else {
+            this.modalErrorMessage = res.message || 'Failed to save to vault';
+          }
+        },
+        error: (err) => {
+          this.isSaving = false;
+          this.modalErrorMessage = err.message || 'An error occurred while saving. Please try again.';
+        }
+      });
+    }
+  }
+
+  removeFromVault(): void {
+    if (this.movie && confirm(`Are you sure you want to remove "${this.movie.title}" from your library?`)) {
+      this.isSaving = true;
+      this.movieService.deleteMovie(this.movieId).subscribe({
+        next: (res) => {
+          this.isSaving = false;
+          if (res.success) {
+            this.inVault = false;
+            this.vaultMovieStatus = null;
+            this.vaultMovieFavorite = false;
+            this.toastService.showSuccess('Movie removed from your Vault.');
+          } else {
+            this.toastService.showError('Failed to remove movie.');
+          }
+        },
+        error: (err) => {
+          this.isSaving = false;
+          this.toastService.showError(err.message || 'An error occurred.');
+        }
+      });
+    }
+  }
+
+  // Template Helpers
+  getBackdropUrl(path: string | null): string {
+    if (!path) return '';
+    return `https://image.tmdb.org/t/p/original${path}`;
+  }
+
+  getPosterUrl(path: string | null): string {
+    if (!path) return 'assets/movie-placeholder.png';
+    return `https://image.tmdb.org/t/p/w500${path}`;
+  }
+
+  handleImageError(event: Event): void {
+    const imgEl = event.target as HTMLImageElement;
+    if (imgEl) {
+      imgEl.src = 'assets/movie-placeholder.png';
+    }
   }
 }
